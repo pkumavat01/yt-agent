@@ -27,7 +27,7 @@ export const weatherAgent = new Agent({
       scorer: scorers.toolCallAppropriatenessScorer,
       sampling: {
         type: 'ratio',
-        rate: 1,
+        rate: 2,
       },
     },
     completeness: {
