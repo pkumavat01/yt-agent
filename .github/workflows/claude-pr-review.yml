@@ -24,11 +24,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Use npm ci when a lockfile exists for reproducible installs, otherwise fall back to npm install
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Run fallow audit
         id: fallow-audit
@@ -62,6 +68,8 @@ jobs:
   claude-review:
     runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.user.type == 'User' }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,11 +81,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gh jq
 
-      - name: Authenticate GitHub CLI
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "${GITHUB_TOKEN}" | gh auth login --with-token
 
       - name: Resolve per-author secret name
         id: secret_name
@@ -107,7 +110,7 @@ jobs:
       - name: Post auth instructions when token is missing
         if: steps.token_check.outputs.has_token == 'false'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           SECRET_NAME: ${{ steps.secret_name.outputs.name }}
