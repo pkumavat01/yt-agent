@@ -52,6 +52,13 @@ jobs:
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Log Claude token source
+        if: steps.token_check.outputs.has_token == 'true'
+        env:
+          SECRET_NAME: ${{ steps.secret_name.outputs.name }}
+        run: |
+          echo "Using Claude OAuth token from repository secret: ${SECRET_NAME}"
+
       - name: Post auth instructions when token is missing
         if: steps.token_check.outputs.has_token == 'false'
         env:
